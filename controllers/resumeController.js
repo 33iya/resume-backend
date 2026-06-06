@@ -1,4 +1,4 @@
-const Resume = require("../models/Resume");
+const Resume = require("../models/resume");
 
 // =======================
 // CREATE RESUME (LOGIN USER ONLY)
