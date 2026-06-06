@@ -30,8 +30,8 @@ app.get("/", (req, res) => {
 // ROUTES (ONLY ESSENTIAL FOR NOW)
 // ----------------------
 
-// USER ROUTES
-app.use("/api/user", require("./routes/userRoutes"));
+// AUTH ROUTES
+app.use("/api/auth", require("./routes/authRoutes"));
 
 // RESUME ROUTES
 app.use("/api/resume", require("./routes/resumeRoutes"));
