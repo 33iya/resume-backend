@@ -10,14 +10,13 @@ const app = express();
 // ----------------------
 // MIDDLEWARES
 // ----------------------
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(morgan("dev"));
-
-// ----------------------
-// DB CONNECT
-// ----------------------
-connectDB();
 
 // ----------------------
 // TEST ROUTE
@@ -27,43 +26,25 @@ app.get("/", (req, res) => {
 });
 
 // ----------------------
-// ROUTES (ONLY ESSENTIAL FOR NOW)
+// ROUTES
 // ----------------------
-
-// AUTH ROUTES
 app.use("/api/auth", require("./routes/authRoutes"));
-
-// RESUME ROUTES
 app.use("/api/resume", require("./routes/resumeRoutes"));
-
-// AI ROUTE (KEEP ONLY IF READY)
 app.use("/api/ai", require("./routes/aiRoutes"));
 
 // ----------------------
-// 404 HANDLER
-// ----------------------
-app.use((req, res) => {
-  res.status(404).json({
-    message: "Route not found",
-  });
-});
-
-// ----------------------
-// GLOBAL ERROR HANDLER
-// ----------------------
-app.use((err, req, res, next) => {
-  console.error(err.message);
-
-  res.status(500).json({
-    message: "Server Error",
-  });
-});
-
-// ----------------------
-// START SERVER
+// START SERVER AFTER DB CONNECT
 // ----------------------
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+connectDB()
+  .then(() => {
+    console.log("MongoDB Connected");
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB Connection Error:", err.message);
+  });

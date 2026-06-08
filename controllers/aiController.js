@@ -1,65 +1,51 @@
-const OpenAI = require("openai");
+const axios = require("axios");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// =======================
-// AI RESUME GENERATOR
-// =======================
 const generateResume = async (req, res) => {
   try {
     const { jobTitle, skills, experience } = req.body;
 
     if (!jobTitle) {
-      return res.status(400).json({
-        message: "Job title is required",
-      });
+      return res.status(400).json({ success: false, message: "Job title is required" });
     }
 
-    const prompt = `
+    const promptText = `
 You are an expert resume writer.
-
-Create a professional ATS-friendly resume content for:
-
+Create a professional ATS-friendly resume summary for a candidate with the following details:
 Job Title: ${jobTitle}
-Skills: ${skills}
-Experience: ${experience}
+Skills: ${skills || "Not specified yet"}
+Experience: ${experience || "Not specified yet"}
 
-Return output in JSON format:
-{
-  "summary": "",
-  "skills": [],
-  "experiencePoints": [],
-  "improvementTips": []
-}
+Return only 3-4 sentences of a professional summary. Do not include any extra text, markdown, or headers. Just the paragraph.
 `;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
+    const apiKey = process.env.OPENAI_API_KEY; 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await axios.post(url, {
+      contents: [{ parts: [{ text: promptText }] }]
     });
 
-    const result = completion.choices[0].message.content;
+    // ✅ Gemini se raw text nikalna
+    let resultText = response.data.candidates[0].content.parts[0].text;
+    
+    // Agar Gemini ne quotes ya backticks lagaye ho toh saaf karna
+    resultText = resultText.replace(/```json|```/g, "").trim();
 
+    // Frontend ko direct text ya object dono format mein bhej rahe hain taaki koi galti na ho
     res.json({
       success: true,
-      data: result,
+      data: {
+        summary: resultText
+      }
     });
+
   } catch (error) {
-    console.log(error);
+    console.error("❌ GEMINI API ERROR:", error.response?.data || error.message);
     res.status(500).json({
-      message: "AI generation failed",
+      success: false,
+      message: "AI setup configuration issue",
     });
   }
 };
 
-module.exports = {
-  generateResume,
-};
+module.exports = { generateResume };
